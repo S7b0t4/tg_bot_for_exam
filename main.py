@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram import F
-from database import createUser, createTask, getStatus
+from database import createUser, createTask, getStatus, getRandomTask
 
 api_token = '7358477783:AAFqhM5DZUWF18keUNoFC0EV6I5PZrlxD50'
 bot = Bot(token=api_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -37,13 +37,14 @@ async def practice_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'task_18')
 async def get_task_text(callback: CallbackQuery):
+    task = await getRandomTask()
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Правильный", callback_data="answer_right")],
         [InlineKeyboardButton(text="❌ Неправильный", callback_data="answer_wrong")],
         [InlineKeyboardButton(text='Назад', callback_data='start')]
     ])
 
-    await callback.message.answer("Это правильный ответ или неправильный?", reply_markup=keyboard)
+    await callback.message.answer(task["description"], reply_markup=keyboard)
 
 @dp.callback_query(F.data == 'profile')
 async def profile_handler(callback: CallbackQuery):

@@ -97,9 +97,9 @@ async def getStatus(tg_id):
         status = await get_status(session, tg_id=tg_id)
         return status
 
-async def getRandomTask(tg_id):
+async def getRandomTask():
     async with async_session() as session:
-        status = await get_random_task(session, tg_id=tg_id)
+        status = await get_random_task(session)
         return status
 
 if __name__ == '__main__':
