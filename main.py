@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram import F
-from database import createUser, createTask
+from database import createUser, createTask, getStatus
 
 api_token = '7358477783:AAFqhM5DZUWF18keUNoFC0EV6I5PZrlxD50'
 bot = Bot(token=api_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -37,11 +37,16 @@ async def practice_handler(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'profile')
 async def profile_handler(callback: CallbackQuery):
+    print(await getStatus(callback.from_user.id))
     keyboard3 = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Назад', callback_data='start')]
     ])
-    await callback.message.answer('Профиль пользователя:\nПройдено заданий:\nОтвечено правильно:'
-                                  '\nОтвечено неправильно:\nМесто в рейтинге:', reply_markup=keyboard3)
+    await callback.message.answer(
+    'Профиль пользователя:\n' \
+    'Пройдено заданий:\n' \
+    'Отвечено правильно:\n' \
+    'Отвечено неправильно:\n' \
+    'Место в рейтинге:', reply_markup=keyboard3)
 
 #Добавить задачу
 

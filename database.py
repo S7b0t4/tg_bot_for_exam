@@ -27,13 +27,16 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+#Функция которая добавляет пользователя в базу если его нету
 async def get_user(session: AsyncSession, tg_id: BigInteger, username: str = None) -> User:
     print(tg_id, username)
+    #Здесь она находит пользователя
     result = await session.execute(
         select(User).where(User.tg_id == tg_id)
     )
     user = result.scalar_one_or_none()
 
+    #А здесь если не находит то создает либо меняет имя пользователя если у него поменялось tg_tag
     if not user:
         user = User(tg_id=tg_id, username=username)
         session.add(user)
@@ -44,11 +47,19 @@ async def get_user(session: AsyncSession, tg_id: BigInteger, username: str = Non
     print(user.id, user.username, user.total_tasks)
     return user
 
+#Функция которая создает задание
 async def get_task(session: AsyncSession, task_text: str, is_right: Boolean) -> Task:
     task = Task(description=task_text, is_right_answer=is_right)
     session.add(task)
     await session.commit()
     return task
+
+#Функция которая ищет пользователя по tg_id
+async def get_status(session: AsyncSession, tg_id:BigInteger) -> User:
+    result = await session.execute(
+        select(User).where(User.tg_id == tg_id)
+    )
+    return result
 
 
 async def main():
@@ -61,6 +72,11 @@ async def createUser(tg_id, username):
 async def createTask(task_text, is_right):
     async with async_session() as session:
         task = await get_task(session, task_text=task_text, is_right=is_right)
+
+async def getStatus(tg_id):
+    async with async_session() as session:
+        status = await get_status(session, tg_id=tg_id)
+        return status
 
 if __name__ == '__main__':
     asyncio.run(main())
