@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram import F
-from database import createUser, createTask, getStatus, getRandomTask
+from database import createUser, createTask, getStatus, getRandomTask, updateUserStats
 
 api_token = '7358477783:AAFqhM5DZUWF18keUNoFC0EV6I5PZrlxD50'
 bot = Bot(token=api_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -60,6 +60,12 @@ async def send_task_18(callback: CallbackQuery, state: FSMContext):
 
 @dp.callback_query(TaskPracticeState.waiting_for_answer)
 async def check_answer(callback: CallbackQuery, state: FSMContext):
+    if callback.data == 'start':
+        await state.clear()
+        await callback.answer()
+        await cmd_start(callback.message)
+        return
+
     data = await state.get_data()
     correct_answer = data["is_right"]
     message_ids = data.get("message_ids", [])
@@ -71,12 +77,17 @@ async def check_answer(callback: CallbackQuery, state: FSMContext):
         except Exception as e:
             print(f"❌ Не удалось удалить сообщение {msg_id}: {e}")
 
-    # Проверка ответа
     user_answer = callback.data == "answer_right"
-    result_msg = await callback.message.answer("✅ Верно!" if user_answer == correct_answer else "❌ Неверно!")
+    if user_answer == correct_answer:
+        await updateUserStats(callback.from_user.id, answer=True)
+        result_text = "✅ Верно!"
+    else:
+        await updateUserStats(callback.from_user.id, answer=False)
+        result_text = "❌ Неверно!"
+
+    result_msg = await callback.message.answer(result_text)
     explanation_msg = await callback.message.answer(data["description_answer"])
 
-    # ⏳ Удаление этих двух сообщений — в фоне (через 10 сек)
     async def delayed_cleanup():
         await asyncio.sleep(5)
         for msg in [result_msg, explanation_msg]:
@@ -88,8 +99,9 @@ async def check_answer(callback: CallbackQuery, state: FSMContext):
     asyncio.create_task(delayed_cleanup())
 
     await state.clear()
+    await callback.answer()
 
-    # ⏱️ Новый вопрос — сразу
+    # Новый вопрос — сразу
     await send_task_18(callback, state)
 
 
@@ -97,7 +109,6 @@ async def check_answer(callback: CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == 'profile')
 async def profile_handler(callback: CallbackQuery):
     status = await getStatus(callback.from_user.id)
-    print(status)
     keyboard3 = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Назад', callback_data='start')]
     ])

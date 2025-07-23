@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, BigInteger, Boolean, select, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
-from dataclasses import asdict
 import asyncio
 
 DATABASE_URL = 'postgresql+asyncpg://user:password@77.91.70.186:6543/fizegebot'
@@ -77,6 +76,24 @@ async def get_random_task(session: AsyncSession) -> Task:
         task_dict = sqlalchemy_obj_to_dict(task)
         return task_dict
 
+async def update_user_stats(session: AsyncSession, tg_id:BigInteger, answer: Boolean) -> User:
+    result = await session.execute(
+        select(User).where(User.tg_id == tg_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        return
+
+    user.total_tasks += 1
+    if answer:
+        user.correct += 1
+    else:
+        user.wrong += 1
+    
+    await session.commit()
+
+
 def sqlalchemy_obj_to_dict(obj):
     return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
 
@@ -100,6 +117,11 @@ async def getStatus(tg_id):
 async def getRandomTask():
     async with async_session() as session:
         status = await get_random_task(session)
+        return status
+
+async def updateUserStats(tg_id, answer):
+    async with async_session() as session:
+        status = await update_user_stats(session, tg_id=tg_id, answer=answer)
         return status
 
 if __name__ == '__main__':
