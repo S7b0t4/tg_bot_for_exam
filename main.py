@@ -35,16 +35,64 @@ async def practice_handler(callback: CallbackQuery):
     ])
     await callback.message.answer('Выбери раздел:', reply_markup=keyboard2)
 
+class TaskPracticeState(StatesGroup):
+    waiting_for_answer = State()
+
 @dp.callback_query(F.data == 'task_18')
-async def get_task_text(callback: CallbackQuery):
+async def send_task_18(callback: CallbackQuery, state: FSMContext):
     task = await getRandomTask()
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Правильный", callback_data="answer_right")],
         [InlineKeyboardButton(text="❌ Неправильный", callback_data="answer_wrong")],
         [InlineKeyboardButton(text='Назад', callback_data='start')]
     ])
 
-    await callback.message.answer(task["description"], reply_markup=keyboard)
+    sent = await callback.message.answer(task["description"], reply_markup=keyboard)
+    await state.set_state(TaskPracticeState.waiting_for_answer)
+    await state.update_data(
+    task_id=task["id"],
+    is_right=task["is_right_answer"],
+    description_answer=task["description_answer"],
+    message_ids=[sent.message_id]
+)
+
+
+@dp.callback_query(TaskPracticeState.waiting_for_answer)
+async def check_answer(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    correct_answer = data["is_right"]
+    message_ids = data.get("message_ids", [])
+
+    # Удаление старых сообщений по списку
+    for msg_id in message_ids:
+        try:
+            await callback.bot.delete_message(chat_id=callback.message.chat.id, message_id=msg_id)
+        except Exception as e:
+            print(f"❌ Не удалось удалить сообщение {msg_id}: {e}")
+
+    # Проверка ответа
+    user_answer = callback.data == "answer_right"
+    result_msg = await callback.message.answer("✅ Верно!" if user_answer == correct_answer else "❌ Неверно!")
+    explanation_msg = await callback.message.answer(data["description_answer"])
+
+    # ⏳ Удаление этих двух сообщений — в фоне (через 10 сек)
+    async def delayed_cleanup():
+        await asyncio.sleep(5)
+        for msg in [result_msg, explanation_msg]:
+            try:
+                await callback.bot.delete_message(chat_id=callback.message.chat.id, message_id=msg.message_id)
+            except Exception as e:
+                print(f"❌ Не удалось удалить сообщение: {e}")
+
+    asyncio.create_task(delayed_cleanup())
+
+    await state.clear()
+
+    # ⏱️ Новый вопрос — сразу
+    await send_task_18(callback, state)
+
+
 
 @dp.callback_query(F.data == 'profile')
 async def profile_handler(callback: CallbackQuery):
