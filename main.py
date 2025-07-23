@@ -30,23 +30,20 @@ async def cmd_start(message:Message):
 @dp.callback_query(F.data == 'practice')
 async def practice_handler(callback: CallbackQuery):
     keyboard2 = InlineKeyboardMarkup(inline_keyboard=[
-        # [InlineKeyboardButton(text='Задание номер 18', callback_data='task18')],
+        [InlineKeyboardButton(text='Задание номер 18', callback_data='task_18')],
         [InlineKeyboardButton(text='Назад', callback_data='start')]
     ])
     await callback.message.answer('Выбери раздел:', reply_markup=keyboard2)
 
-@dp.callback_query(F.data == 'practice')
-async def get_task_text(message: Message, state: FSMContext):
-    await state.update_data(task_text=message.text)
-
+@dp.callback_query(F.data == 'task_18')
+async def get_task_text(callback: CallbackQuery):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Правильный", callback_data="answer_right")],
         [InlineKeyboardButton(text="❌ Неправильный", callback_data="answer_wrong")],
         [InlineKeyboardButton(text='Назад', callback_data='start')]
     ])
 
-    await message.answer("Это правильный ответ или неправильный?", reply_markup=keyboard)
-    await state.set_state(AddTaskState.waiting_for_answer_type)
+    await callback.message.answer("Это правильный ответ или неправильный?", reply_markup=keyboard)
 
 @dp.callback_query(F.data == 'profile')
 async def profile_handler(callback: CallbackQuery):

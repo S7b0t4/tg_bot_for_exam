@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, BigInteger, Boolean, select
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean, select, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dataclasses import asdict
@@ -22,6 +22,7 @@ class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(String)
+    description_answer = Column(String)
     is_right_answer = Column(Boolean, default=True)
 
 async def init_db():
@@ -66,6 +67,16 @@ async def get_status(session: AsyncSession, tg_id:BigInteger) -> User:
         user_dict = sqlalchemy_obj_to_dict(user)
         return user_dict
 
+async def get_random_task(session: AsyncSession) -> Task:
+    result = await session.execute(
+    select(Task).order_by(func.random()).limit(1)
+    )
+    task = result.scalar_one_or_none()
+
+    if task is not None:
+        task_dict = sqlalchemy_obj_to_dict(task)
+        return task_dict
+
 def sqlalchemy_obj_to_dict(obj):
     return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
 
@@ -84,6 +95,11 @@ async def createTask(task_text, is_right):
 async def getStatus(tg_id):
     async with async_session() as session:
         status = await get_status(session, tg_id=tg_id)
+        return status
+
+async def getRandomTask(tg_id):
+    async with async_session() as session:
+        status = await get_random_task(session, tg_id=tg_id)
         return status
 
 if __name__ == '__main__':
