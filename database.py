@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, BigInteger, Boolean, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
+from dataclasses import asdict
 import asyncio
 
 DATABASE_URL = 'postgresql+asyncpg://user:password@77.91.70.186:6543/fizegebot'
@@ -59,7 +60,14 @@ async def get_status(session: AsyncSession, tg_id:BigInteger) -> User:
     result = await session.execute(
         select(User).where(User.tg_id == tg_id)
     )
-    return result
+    user = result.scalar_one_or_none()
+
+    if user is not None:
+        user_dict = sqlalchemy_obj_to_dict(user)
+        return user_dict
+
+def sqlalchemy_obj_to_dict(obj):
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
 
 
 async def main():
