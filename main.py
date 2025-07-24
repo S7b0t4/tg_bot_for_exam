@@ -58,7 +58,7 @@ async def send_task_18(callback: CallbackQuery, state: FSMContext):
 )
 
 
-@dp.callback_query(TaskPracticeState.waiting_for_answer)
+@dp.callback_query(F.data.in_(['answer_right', 'answer_wrong']), TaskPracticeState.waiting_for_answer)
 async def check_answer(callback: CallbackQuery, state: FSMContext):
     if callback.data == 'start':
         await state.clear()

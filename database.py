@@ -49,8 +49,8 @@ async def get_user(session: AsyncSession, tg_id: BigInteger, username: str = Non
     return user
 
 #Функция которая создает задание
-async def get_task(session: AsyncSession, task_text: str, is_right: Boolean) -> Task:
-    task = Task(description=task_text, is_right_answer=is_right)
+async def get_task(session: AsyncSession, task_text: str, answer_description: str, is_right: Boolean) -> Task:
+    task = Task(description=task_text, is_right_answer=is_right, description_answer=answer_description)
     session.add(task)
     await session.commit()
     return task
@@ -105,9 +105,9 @@ async def createUser(tg_id, username):
     async with async_session() as session:
         user = await get_user(session, tg_id=tg_id, username=username)
 
-async def createTask(task_text, is_right):
+async def createTask(task_text, answer_description, is_right):
     async with async_session() as session:
-        task = await get_task(session, task_text=task_text, is_right=is_right)
+        task = await get_task(session, task_text=task_text, is_right=is_right, answer_description=answer_description)
 
 async def getStatus(tg_id):
     async with async_session() as session:
