@@ -20,8 +20,7 @@ async def cmd_start(message:Message):
     await createUser(user.id, user.username)
     keyboard1 = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Практика по заданиям', callback_data='practice')],
-        [InlineKeyboardButton(text='Мой профиль', callback_data='profile')],
-        [InlineKeyboardButton(text='Добавить задачу', callback_data='add_task')]
+        [InlineKeyboardButton(text='Мой профиль', callback_data='profile')]
     ])
     await message.answer('Привет! Это бот для практики по заданиям из ЕГЭ по физике.', reply_markup=keyboard1)
 
